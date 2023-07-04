@@ -64,8 +64,6 @@ void LoRa::ReadRegister(uint16_t regValue, uint8_t *status, uint8_t size)
 
 	ret = HAL_SPI_Transmit(port, reg, 4, TransmitTimeout);
 	ret = HAL_SPI_Receive( port,status, size, ReceiveTimeout);
-
-//	HAL_SPI_TransmitReceive(port, reg, status, size, 20);
 	nssHigh();
 }
 void LoRa::WriteRegister(uint16_t regValue, uint8_t *data,uint8_t size)
@@ -154,7 +152,6 @@ void LoRa::SetSleep(uint8_t sleepConfig)
  * 0 = 13MHz
  * 1 = 52MHz
  */
-//void LoRa::SetStandby(uint8_t standbyConfig)
 void LoRa::SetStandby(_StandByConfig standbyConfig)
 {
 	uint8_t data[1] = {(uint8_t)standbyConfig};
@@ -218,10 +215,6 @@ void LoRa::SetTxContinuousPreamble()
 void LoRa::SetPacketType(_SetPacketType packetType)
 {
 	uint8_t command[1] = { (uint8_t)packetType};
-	//memcpy(command + 1, data, size);
-//	nssLow();
-//	HAL_SPI_Transmit(port, command,1 + 1,TransmitTimeout); // Page 144.
-//	nssHigh();
 	WriteCommand(0x8a,command,1);
 }
 
@@ -296,18 +289,8 @@ void LoRa::SetChannel(uint16_t channel)
 {
 	if( channel < 1 ) channel = 1;
 	channel--;
-//	channel = 26;
-
-//2424000000 // problem freq
-
 	uint32_t frequency = ( uint32_t )( ( double )(2400000000 +( channel * 1000000)) / ( double )198.3642578125 );
-//	uint32_t frequency = ( uint32_t )( ( double )2402000000 / ( double )198.3642578125 );
-//	uint32_t frequency = ( uint32_t )( ( double )2424000000 / ( double )198.3642578125 );
-//	uint32_t frequency = 0xb89d89 + (channel * 50000);// multiply by 50k to go up 1MHz next channel.
-
-
 	SetRfFrequency( (frequency>>16) & 0xff, (frequency>>8) & 0xff, frequency & 0xff);
-//	radio.SetRfFrequency(0xb8, 0x9d, 0x89);
 }
 void LoRa::SetTxParams(uint8_t power, uint8_t rampTime)
 { // Page 87
@@ -351,15 +334,6 @@ void LoRa::SetBufferBaseAddress(uint8_t txBaseAddress ,uint8_t rxBaseAddress )
  *
  *
  */
-//void LoRa::SetModulationParams(uint8_t parm0, uint8_t parm1, uint8_t parm2)
-//{ // Page 89
-//	uint8_t command = 0x8b;
-//	uint8_t data[3] = {parm0, parm1,parm2};
-//	WriteCommand(command, data,sizeof(data));
-//
-//
-//
-//}
 void LoRa::SetModulationParams(_LoRa_SpreadingFactor param1, _LoRa_BW param2, _LoRa_CR param3)
 { // Page 89
 	uint8_t command = 0x8b;
