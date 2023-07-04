@@ -11,14 +11,11 @@
 #include "LoRa.h"
 #include "string.h"
 
-
 LoRa::LoRa()
 {
-
 }
 LoRa::~LoRa()
 {
-
 }
 
 void LoRa::Init()
@@ -38,9 +35,8 @@ uint8_t LoRa::IsBusy()
 void LoRa::Reset()
 {
 	nresetPort->BRR = nreset;
-	HAL_Delay(50);
+	HAL_Delay(100);
 	nresetPort->BSRR = nreset;
-
 }
 
 void LoRa::ReadRegister(uint16_t regValue, uint8_t *status, uint8_t size)
@@ -50,11 +46,8 @@ void LoRa::ReadRegister(uint16_t regValue, uint8_t *status, uint8_t size)
 	 * reg byte1 ,reg byte2, status = 0x0
 	 *
 	 */
-
 	uint8_t reg[4] = {0};
 	reg[0] = 0x19; 				// Read command
-//	reg[1] = 0x09;//regValue>>8 & 0xff; 		// H byte
-//	reg[2] = 0x44;//regValue & 0xff;	// L byte
 	reg[1] = regValue>>8 & 0xff; 		// H byte
 	reg[2] = regValue & 0xff;	// L byte
 	reg[3] = 0; 				// NOP to start receving data.
@@ -80,8 +73,6 @@ void LoRa::WriteRegister(uint16_t regValue, uint8_t *data,uint8_t size)
 
 	memcpy(reg + 3, data, size);
 	nssLow();
-//	HAL_SPI_Transmit(port, reg, 3, TransmitTimeout);
-//	HAL_SPI_Transmit(port, data,size, TransmitTimeout);
 	HAL_SPI_Transmit(port, reg ,size + 3, TransmitTimeout);
 	nssHigh();
 }
@@ -175,7 +166,6 @@ void LoRa::SetRx(_PeriodBase periodBase, uint8_t periodBaseCount1, uint8_t perio
 	uint8_t command = 0x82;
 	uint8_t data[3] = {(uint8_t)periodBase, periodBaseCount1, periodBaseCount0};
 	WriteCommand(command, data,sizeof(data));
-
 }
 
 void LoRa::SetRxDutyCycle(uint8_t periodBase, uint8_t rxPeriodBaseCount1, uint8_t rxPeriodBaseCount0,
@@ -184,7 +174,6 @@ void LoRa::SetRxDutyCycle(uint8_t periodBase, uint8_t rxPeriodBaseCount1, uint8_
 	uint8_t command = 0x94;
 	uint8_t data[5] = {periodBase, rxPeriodBaseCount1,rxPeriodBaseCount0, sleepPeriodBaseCount1, sleepPeriodBaseCount0};
 	WriteCommand(command, data,sizeof(data));
-
 }
 
 void LoRa::SetCad()
@@ -256,8 +245,6 @@ void LoRa::SetRfFrequency(uint8_t rfFrequency2, uint8_t rfFrequency1, uint8_t rf
 
 void LoRa::SetLoRaWord(uint8_t LoRaWord)
 {
-//	uint8_t LoRaWord = 234;
-
 	/*
 	 * LoRa Synch word allows to further filter data packets
 	 * is effective withint +/- 10 points
@@ -320,7 +307,6 @@ void LoRa::SetBufferBaseAddress(uint8_t txBaseAddress ,uint8_t rxBaseAddress )
 	WriteCommand(command, data,sizeof(data));
 }
 
-
 /*
  * @brief Page 89, Define the modulation parameter
  *
@@ -339,7 +325,6 @@ void LoRa::SetModulationParams(_LoRa_SpreadingFactor param1, _LoRa_BW param2, _L
 	uint8_t command = 0x8b;
 	uint8_t data[3] = {param1, param2,param3};
 	WriteCommand(command, data,sizeof(data));
-
 
 	if( packetType == LORA) // See page 130
 	{
@@ -364,11 +349,7 @@ void LoRa::SetModulationParams(_LoRa_SpreadingFactor param1, _LoRa_BW param2, _L
 		data[0] = 0x01;
 		WriteRegister(0x093C,data,1);//In all cases 0x1 must be written to the Frequency Error Compensation mode register 0x093C
 
-
 	}
-
-
-
 }
 void LoRa::SetPacketParams(uint8_t param1,
 		PacketParams2 param2, uint8_t param3,
