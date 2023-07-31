@@ -27,7 +27,7 @@ void LoRa::Init()
 		;
 }
 
-uint8_t LoRa::IsBusy()
+uint32_t LoRa::IsBusy()// Bug.. return changed to uint32_t from 8
 {
 	return busyPort->IDR & busy;
 }
