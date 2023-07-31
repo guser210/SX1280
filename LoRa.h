@@ -112,7 +112,7 @@ public:
 	~LoRa();
 
 	void Init();
-	uint8_t IsBusy();
+	uint32_t IsBusy();// Bug.. return changed to uint32_t from 8
 	void Reset();
 
 
