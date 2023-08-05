@@ -11,11 +11,14 @@
 #include "LoRa.h"
 #include "string.h"
 
+
 LoRa::LoRa()
 {
+
 }
 LoRa::~LoRa()
 {
+
 }
 
 void LoRa::Init()
@@ -23,11 +26,15 @@ void LoRa::Init()
 	nresetPort->BSRR = nreset;
 	nssHigh();
 	Reset();
+	WaitForBusy();
+}
+void LoRa::WaitForBusy()
+{
 	while(IsBusy())
-		;
+			;
 }
 
-uint32_t LoRa::IsBusy()// Bug.. return changed to uint32_t from 8
+uint32_t LoRa::IsBusy()
 {
 	return busyPort->IDR & busy;
 }
@@ -37,6 +44,7 @@ void LoRa::Reset()
 	nresetPort->BRR = nreset;
 	HAL_Delay(100);
 	nresetPort->BSRR = nreset;
+
 }
 
 void LoRa::ReadRegister(uint16_t regValue, uint8_t *status, uint8_t size)
@@ -46,17 +54,21 @@ void LoRa::ReadRegister(uint16_t regValue, uint8_t *status, uint8_t size)
 	 * reg byte1 ,reg byte2, status = 0x0
 	 *
 	 */
+
 	uint8_t reg[4] = {0};
 	reg[0] = 0x19; 				// Read command
 	reg[1] = regValue>>8 & 0xff; 		// H byte
 	reg[2] = regValue & 0xff;	// L byte
 	reg[3] = 0; 				// NOP to start receving data.
 
+	WaitForBusy();
 	HAL_StatusTypeDef ret;
 	nssLow();
 
 	ret = HAL_SPI_Transmit(port, reg, 4, TransmitTimeout);
 	ret = HAL_SPI_Receive( port,status, size, ReceiveTimeout);
+
+
 	nssHigh();
 }
 void LoRa::WriteRegister(uint16_t regValue, uint8_t *data,uint8_t size)
@@ -72,6 +84,8 @@ void LoRa::WriteRegister(uint16_t regValue, uint8_t *data,uint8_t size)
 	reg[2] = regValue & 0xff;	// L Byte.
 
 	memcpy(reg + 3, data, size);
+
+	WaitForBusy();
 	nssLow();
 	HAL_SPI_Transmit(port, reg ,size + 3, TransmitTimeout);
 	nssHigh();
@@ -89,6 +103,7 @@ void LoRa::WriteBuffer(uint8_t offset, uint8_t* data, uint8_t size)
 	reg[0] = 0x1A; 		// Write buffer Command
 	reg[1] = offset; 		// offset
 
+	WaitForBusy();
 	nssLow();
 	HAL_SPI_Transmit(port, reg, 2, TransmitTimeout);
 	HAL_SPI_Transmit(port, data,size, TransmitTimeout);
@@ -109,6 +124,8 @@ void LoRa::ReadBuffer(uint8_t offset, uint8_t* data, uint8_t size)
 	reg[2] = 0; // NOP
 
 	uint8_t buffer[50];
+
+	WaitForBusy();
 	nssLow();
 	HAL_SPI_Transmit(port, reg, 3, TransmitTimeout);
 	HAL_SPI_Receive(port, data,size, ReceiveTimeout);
@@ -119,6 +136,8 @@ void LoRa::ReadBuffer(uint8_t offset, uint8_t* data, uint8_t size)
 void LoRa::WriteCommand(uint8_t cmd)
 {
 	uint8_t command[1] = {cmd};
+
+	WaitForBusy();
 	nssLow();
 	HAL_SPI_Transmit(port, command,1,TransmitTimeout); // Page 144.
 	nssHigh();
@@ -127,6 +146,8 @@ void LoRa::WriteCommand(uint8_t cmd,uint8_t *data, uint8_t size)
 {
 	uint8_t command[1 + size] = {cmd};
 	memcpy(command + 1, data, size);
+
+	WaitForBusy();
 	nssLow();
 	HAL_SPI_Transmit(port, command,size + 1,TransmitTimeout); // Page 144.
 	nssHigh();
@@ -143,6 +164,7 @@ void LoRa::SetSleep(uint8_t sleepConfig)
  * 0 = 13MHz
  * 1 = 52MHz
  */
+//void LoRa::SetStandby(uint8_t standbyConfig)
 void LoRa::SetStandby(_StandByConfig standbyConfig)
 {
 	uint8_t data[1] = {(uint8_t)standbyConfig};
@@ -166,6 +188,7 @@ void LoRa::SetRx(_PeriodBase periodBase, uint8_t periodBaseCount1, uint8_t perio
 	uint8_t command = 0x82;
 	uint8_t data[3] = {(uint8_t)periodBase, periodBaseCount1, periodBaseCount0};
 	WriteCommand(command, data,sizeof(data));
+
 }
 
 void LoRa::SetRxDutyCycle(uint8_t periodBase, uint8_t rxPeriodBaseCount1, uint8_t rxPeriodBaseCount0,
@@ -174,6 +197,7 @@ void LoRa::SetRxDutyCycle(uint8_t periodBase, uint8_t rxPeriodBaseCount1, uint8_
 	uint8_t command = 0x94;
 	uint8_t data[5] = {periodBase, rxPeriodBaseCount1,rxPeriodBaseCount0, sleepPeriodBaseCount1, sleepPeriodBaseCount0};
 	WriteCommand(command, data,sizeof(data));
+
 }
 
 void LoRa::SetCad()
@@ -200,7 +224,7 @@ void LoRa::SetTxContinuousPreamble()
   * 3 = FLRC
   * 4 = BLE
   */
-//void LoRa::SetPacketType(uint8_t packetType)
+
 void LoRa::SetPacketType(_SetPacketType packetType)
 {
 	uint8_t command[1] = { (uint8_t)packetType};
@@ -211,6 +235,8 @@ uint8_t LoRa::GetStatus()
 {
 	uint8_t command[2] = {0xc0,0};
 	uint8_t result [1] = {0};
+
+	WaitForBusy();
 	nssLow();
 	HAL_SPI_Transmit(port, command, 1, TransmitTimeout);
 	HAL_SPI_Receive(port, result, 1, ReceiveTimeout);
@@ -222,6 +248,8 @@ uint8_t LoRa::GetPacketType()
 { // Page 86
 	uint8_t command[2] = {0x03,0};
 	uint8_t result [1] = {0};
+
+	WaitForBusy();
 	nssLow();
 	HAL_SPI_Transmit(port, command, 2, TransmitTimeout);
 	HAL_SPI_Receive(port, result, 1, ReceiveTimeout);
@@ -245,6 +273,8 @@ void LoRa::SetRfFrequency(uint8_t rfFrequency2, uint8_t rfFrequency1, uint8_t rf
 
 void LoRa::SetLoRaWord(uint8_t LoRaWord)
 {
+//	uint8_t LoRaWord = 234;
+
 	/*
 	 * LoRa Synch word allows to further filter data packets
 	 * is effective withint +/- 10 points
@@ -265,19 +295,26 @@ void LoRa::SetLoRaWord(uint8_t LoRaWord)
 	buffer[1] |= ((LoRaWord & 0x0f)<<4);
 
 	WriteRegister(0x944, (uint8_t*)buffer,2); // LoRa Synch Word value.
-	buffer[0] = 0;
-	buffer[1] = 0;
-	ReadRegister(0x944, (uint8_t*)buffer,2); // LoRa Synch Word value.
-	buffer[0] = 1;
-	buffer[1] = 2;
+
+
+
 
 }
 void LoRa::SetChannel(uint16_t channel)
 {
 	if( channel < 1 ) channel = 1;
 	channel--;
+
+
 	uint32_t frequency = ( uint32_t )( ( double )(2400000000 +( channel * 1000000)) / ( double )198.3642578125 );
+
+
+
+
+
+
 	SetRfFrequency( (frequency>>16) & 0xff, (frequency>>8) & 0xff, frequency & 0xff);
+
 }
 void LoRa::SetTxParams(uint8_t power, uint8_t rampTime)
 { // Page 87
@@ -307,6 +344,7 @@ void LoRa::SetBufferBaseAddress(uint8_t txBaseAddress ,uint8_t rxBaseAddress )
 	WriteCommand(command, data,sizeof(data));
 }
 
+
 /*
  * @brief Page 89, Define the modulation parameter
  *
@@ -320,11 +358,13 @@ void LoRa::SetBufferBaseAddress(uint8_t txBaseAddress ,uint8_t rxBaseAddress )
  *
  *
  */
+
 void LoRa::SetModulationParams(_LoRa_SpreadingFactor param1, _LoRa_BW param2, _LoRa_CR param3)
 { // Page 89
 	uint8_t command = 0x8b;
 	uint8_t data[3] = {param1, param2,param3};
 	WriteCommand(command, data,sizeof(data));
+
 
 	if( packetType == LORA) // See page 130
 	{
@@ -349,7 +389,11 @@ void LoRa::SetModulationParams(_LoRa_SpreadingFactor param1, _LoRa_BW param2, _L
 		data[0] = 0x01;
 		WriteRegister(0x093C,data,1);//In all cases 0x1 must be written to the Frequency Error Compensation mode register 0x093C
 
+
 	}
+
+
+
 }
 void LoRa::SetPacketParams(uint8_t param1,
 		PacketParams2 param2, uint8_t param3,
@@ -364,6 +408,8 @@ void LoRa::SetPacketParams(uint8_t param1,
 void LoRa::GetRxBufferStatus(uint8_t &rxPayloadLen, uint8_t &rxStartBufferPointer)
 { // Page 92
 	uint8_t command[2] = {0x17,0};
+
+	WaitForBusy();
 	nssLow();
 	HAL_SPI_Transmit(port, command, 2, TransmitTimeout);
 	HAL_SPI_Receive(port, command, 2, ReceiveTimeout);
@@ -376,6 +422,8 @@ void LoRa::GetRxBufferStatus(uint8_t &rxPayloadLen, uint8_t &rxStartBufferPointe
 void LoRa::GetPacketStatus(uint8_t &status1, uint8_t &status2, uint8_t &status3, uint8_t &status4, uint8_t &status5)
 { // Page 93
 	uint8_t command[5] = {0x1d, 0};
+
+	WaitForBusy();
 	nssLow();
 	HAL_SPI_Transmit(port, command, 2, TransmitTimeout);
 	HAL_SPI_Receive(port, command, 5, ReceiveTimeout);
@@ -391,6 +439,8 @@ void LoRa::GetPacketStatus(uint8_t &status1, uint8_t &status2, uint8_t &status3,
 uint8_t LoRa::GetRssiInst()
 { // Page 95
 	uint8_t command[2] = {0x1f,0};
+
+	WaitForBusy();
 	nssLow();
 	HAL_SPI_Transmit(port, command, 2, TransmitTimeout);
 	HAL_SPI_Receive(port, command, 1, ReceiveTimeout);
@@ -416,6 +466,8 @@ void LoRa::GetIrqStatus(uint8_t &irqStatus1, uint8_t &irqStatus0)
 { // Page 97
 	uint8_t command[] = {0x15, 0};
 	uint8_t result[] = {0,0};
+
+	WaitForBusy();
 	nssLow();
 	HAL_SPI_Transmit(port, command, 2, TransmitTimeout);
 	HAL_SPI_Receive(port, result, 2, ReceiveTimeout);
@@ -474,4 +526,5 @@ void LoRa::SetAdvancedRanging(uint8_t enable)
 	uint8_t data[1] = {enable};
 	WriteCommand(command, data,sizeof(data));
 }
+
 
