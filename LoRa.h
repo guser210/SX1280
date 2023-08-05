@@ -33,8 +33,8 @@ public:
 	uint16_t dio2;
 	uint16_t dio3;
 
-	const uint16_t TransmitTimeout = 5000;
-	const uint16_t ReceiveTimeout = 5000;
+	const uint16_t TransmitTimeout = 500;
+	const uint16_t ReceiveTimeout = 500;
 
 	enum _StandByConfig{
 		STDBY_RC_13MHz = 0,
@@ -112,7 +112,8 @@ public:
 	~LoRa();
 
 	void Init();
-	uint32_t IsBusy();// Bug.. return changed to uint32_t from 8
+	void WaitForBusy();
+	uint32_t IsBusy();
 	void Reset();
 
 
@@ -131,7 +132,6 @@ public:
 
 	void SetSleep(uint8_t sleepConfig);
 	void SetStandby(_StandByConfig standbyConfig);
-//	void SetStandby(uint8_t standbyConfig);
 
 	void SetFs();
 
